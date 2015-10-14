@@ -1,7 +1,151 @@
-@(message: String)
+@()
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
 
-@main("Welcome to Play") {
-
-    @play20.welcome(message)
-
+rect {
+fill: none;
+pointer-events: all;
 }
+
+.node {
+    stroke: black;
+/*fill: #000;*/
+}
+
+.cursor {
+fill: none;
+stroke: brown;
+pointer-events: none;
+}
+
+.link {
+stroke: #999;
+    /*stroke: red;*/
+}
+
+</style>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script>
+
+var connection = new WebSocket('ws://localhost:9000/ws');
+// When the connection is open, send some data to the server
+connection.onopen = function () {
+console.log("connection successfully opened")
+//  connection.send(JSON.stringify({lol: 'Ping'})); // Send the message 'Ping' to the server
+};
+
+// Log errors
+connection.onerror = function (error) {
+  console.log('WebSocket Error ' + error);
+};
+
+// Log messages from the server
+connection.onmessage = function (e) {
+  console.log('Server: ' + e.data);
+//  console.log('parsed: ' + JSON.parse(e.data)[0]);
+  var parsed = JSON.parse(e.data);
+  nodes.forEach(function(d) {d.color = fill(d3.rgb((parsed[d.index].r/2.0 + 0.5)*256, (parsed[d.index].g/2.0 + 0.5)*256, (parsed[d.index].b/2.0 + 0.5)*256));})
+//  nodes.data(JSON.parse(e.data));
+};
+
+
+var width = 960,
+    height = 500;
+
+var fill = d3.scale.category10();
+
+var force = d3.layout.force()
+    .size([width, height])
+    .nodes([{}]) // initialize with a single node
+    .linkDistance(30)
+    .charge(-60)
+    .on("tick", tick);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .on("mousemove", mousemove)
+    .on("mousedown", mousedown);
+
+svg.append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+var nodes = force.nodes(),
+    links = force.links(),
+    node = svg.selectAll(".node"),
+    link = svg.selectAll(".link");
+
+var cursor = svg.append("circle")
+    .attr("r", 30)
+    .attr("transform", "translate(-100,-100)")
+    .attr("class", "cursor");
+
+restart();
+
+function mousemove() {
+  cursor.attr("transform", "translate(" + d3.mouse(this) + ")");
+}
+
+
+
+function mousedown() {
+  var point = d3.mouse(this),
+      node = {x: point[0], y: point[1], index: nodes.length};
+      console.log(node);
+
+  var newLinks = [];
+
+  // add links to any nearby nodes
+  nodes.forEach(function(target) {
+    var x = target.x - node.x,
+        y = target.y - node.y;
+    if (Math.sqrt(x * x + y * y) < 30) {
+      newLinks.push({source: node, target: target});
+      links.push({source: node, target: target});
+    }
+  });
+  var n = nodes.push(node);
+
+  connection.send(JSON.stringify({links: newLinks, node: node}));
+
+  restart();
+}
+
+function tick() {
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node.attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+      .attr("fill", function (d) {return d.color; });
+}
+
+function restart() {
+
+  link = link.data(links);
+
+  link.enter().insert("line", ".node")
+//  .attr("fill", "red")
+      .attr("class", "link");
+
+  node = node.data(nodes);
+
+  node.enter().insert("circle", ".cursor")
+      .attr("class", "node")
+      .attr("r", 5)
+      .call(force.drag);
+
+  force.start();
+}
+
+</script>
+<br>
+
+
+    <p>jsdoifdsoij</p>
+</body>
