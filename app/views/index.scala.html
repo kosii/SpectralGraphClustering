@@ -29,7 +29,16 @@ stroke: #999;
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
     <script>
 
-var connection = new WebSocket('ws://localhost:9000/ws');
+var loc = window.location, new_uri;
+if (loc.protocol === "https:") {
+    new_uri = "wss:";
+} else {
+    new_uri = "ws:";
+}
+new_uri += "//" + loc.host;
+new_uri += loc.pathname + "ws";
+
+var connection = new WebSocket(new_uri);
 // When the connection is open, send some data to the server
 connection.onopen = function () {
 console.log("connection successfully opened")
@@ -144,8 +153,4 @@ function restart() {
 }
 
 </script>
-<br>
-
-
-    <p>jsdoifdsoij</p>
 </body>
