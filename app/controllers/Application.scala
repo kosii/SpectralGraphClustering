@@ -37,6 +37,11 @@ class Application extends Controller {
     implicit val format = Json.format[Update]
   }
 
+  case class ChangeK(k: Int)
+  object ChangeK {
+    implicit val format = Json.format[ChangeK]
+  }
+
   class MyWebSocketActor(out: ActorRef) extends Actor {
     import breeze.linalg._
     def getLaplacian(nodes: Set[Int], links: Set[(Int, Int)]): DenseMatrix[Double] = {
@@ -67,31 +72,48 @@ class Application extends Controller {
       }
     }
 
-    def receive = receive(Set(0), Set())
-    def receive(nodes: Set[Int], links: Set[(Int, Int)]): Receive = {
+    def colorsToGraph(nodes: Set[Int], links: Set[(Int, Int)], k:Int) = {
+      import nak.cluster._
+
+      val colors = getColors(getLaplacian(nodes, links))
+//      println(colors.toArray.toList.map(d => Map("color" -> d)))
+      val vectorizedResults = colors.toArray.map({case (a, b, c) => Vector(a, b, c)})
+      val kmeans = new Kmeans[Vector[Double]](vectorizedResults)
+      val (_, centroids) = kmeans.run(k, 10)
+      val (_, memberships) = kmeans.computeClusterMemberships(centroids)
+//      println(s"memberships: $memberships")
+      val replacedWithCentroids = vectorizedResults.zip(memberships).map({case (a, b) => centroids(b)})
+//      println(s"centroids: $centroids")
+      val transformed = replacedWithCentroids.map(d => Map("r" -> d(0), "g" -> d(1), "b" -> d(2)))
+//      println(s"transformed result of kmeans: $replacedWithCentroids")
+      transformed
+    }
+
+    def receive = receive(Set(0), Set(), 4)
+    def receive(nodes: Set[Int], links: Set[(Int, Int)], k: Int): Receive = {
       case msg: JsValue => Json.fromJson[Update](msg) match {
         case JsError(_) =>
-          println("ERROR")
+          Json.fromJson[ChangeK](msg) match {
+            case JsSuccess(ChangeK(k), _) =>
+              context.become(receive(nodes, links, k))
+
+              val colors = colorsToGraph(nodes, links, k)
+              out ! Json.toJson(colors)
+            case JsError(_) =>
+              println(s"ERROR PARSING KMEANS CHANGE AND UPDATE")
+          }
         case JsSuccess(update, _) =>
           val newNodes = nodes + update.node.index
           val newLinks = links ++ update.links.map({ case Link(from, to) =>
             (from.index, to.index)
           })
-          context.become(receive(newNodes, newLinks))
-          val colors = getColors(getLaplacian(newNodes, newLinks))
-          println(colors.toArray.toList.map(d => Map("color" -> d)))
-          import nak.cluster._
-          val vectorizedResults = colors.toArray.map({case (a, b, c) => Vector(a, b, c)})
-          val kmeans = new Kmeans[Vector[Double]](vectorizedResults)
-          val (_, centroids) = kmeans.run(4, 10)
-          val (_, memberships) = kmeans.computeClusterMemberships(centroids)
-          println(s"memberships: $memberships")
-          val replacedWithCentroids = vectorizedResults.zip(memberships).map({case (a, b) => centroids(b)})
-          println(s"centroids: $centroids")
-          val transformed = replacedWithCentroids.map(d => Map("r" -> d(0), "g" -> d(1), "b" -> d(2)))
-          println(s"transformed result of kmeans: $replacedWithCentroids")
-//          println(update)
-          out ! Json.toJson(transformed)
+
+          val colors = colorsToGraph(newNodes, newLinks, k)
+
+          out ! Json.toJson(colors)
+
+          context.become(receive(newNodes, newLinks, k))
+
       }
     }
   }

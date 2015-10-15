@@ -60,13 +60,14 @@ connection.onmessage = function (e) {
   var parsed = JSON.parse(e.data);
   nodes.forEach(function(d) {d.color = fill(d3.rgb((parsed[d.index].r/2.0 + 0.5)*256, (parsed[d.index].g/2.0 + 0.5)*256, (parsed[d.index].b/2.0 + 0.5)*256));})
 //  nodes.data(JSON.parse(e.data));
+  restart();
 };
 
 
 var width = 960,
     height = 500;
 
-var fill = d3.scale.category10();
+var fill = d3.scale.category20();
 
 var force = d3.layout.force()
     .size([width, height])
@@ -157,13 +158,15 @@ function restart() {
 
 </script>
     <br/>
-    <input type="range" max="20" min="1" value="2" step="1" onchange="showValue(this.value)"/>
-    <span id="range">0</span>
+    <h2>Current number of clusters: <span id="range">2</span></h2>
+    <h2>Change number of clusters:<input type="range" max="20" min="1" value="2" step="1" onchange="showValue(this.value)"/></h2>
+
     <script type="text/javascript">
-function showValue(newValue)
-{
-	document.getElementById("range").innerHTML=newValue;
-}
+        function showValue(newValue)
+        {
+            connection.send(JSON.stringify({k: Number(newValue)}));
+            document.getElementById("range").innerHTML=newValue;
+        }
 </script>
 
 </body>
