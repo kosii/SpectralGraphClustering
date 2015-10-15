@@ -1,6 +1,7 @@
 package controllers
 
 import breeze.linalg.eigSym.EigSym
+import breeze.linalg.functions.euclideanDistance
 import play.api.mvc._
 import play.api.libs.json._
 
@@ -79,8 +80,18 @@ class Application extends Controller {
           context.become(receive(newNodes, newLinks))
           val colors = getColors(getLaplacian(newNodes, newLinks))
           println(colors.toArray.toList.map(d => Map("color" -> d)))
+          import nak.cluster._
+          val vectorizedResults = colors.toArray.map({case (a, b, c) => Vector(a, b, c)})
+          val kmeans = new Kmeans[Vector[Double]](vectorizedResults)
+          val (_, centroids) = kmeans.run(4, 10)
+          val (_, memberships) = kmeans.computeClusterMemberships(centroids)
+          println(s"memberships: $memberships")
+          val replacedWithCentroids = vectorizedResults.zip(memberships).map({case (a, b) => centroids(b)})
+          println(s"centroids: $centroids")
+          val transformed = replacedWithCentroids.map(d => Map("r" -> d(0), "g" -> d(1), "b" -> d(2)))
+          println(s"transformed result of kmeans: $replacedWithCentroids")
 //          println(update)
-          out ! Json.toJson(colors.toArray.toList.map(d => Map("r" -> d._1, "g" -> d._2, "b" -> d._3)))
+          out ! Json.toJson(transformed)
       }
     }
   }

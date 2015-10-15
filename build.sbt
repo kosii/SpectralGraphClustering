@@ -20,10 +20,11 @@ libraryDependencies  ++= Seq(
   // native libraries greatly improve performance, but increase jar sizes.
   // It also packages various blas implementations, which have licenses that may or may not
   // be compatible with the Apache License. No GPL code, as best I know.
-  "org.scalanlp" %% "breeze-natives" % "0.11.2"
+  "org.scalanlp" %% "breeze-natives" % "0.11.2",
   // the visualization library is distributed separately as well.
   // It depends on LGPL code.
 //  "org.scalanlp" %% "breeze-viz" % "0.11.2"
+    "org.scalanlp" %% "nak" % "1.3"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"

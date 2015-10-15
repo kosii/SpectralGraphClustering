@@ -1,6 +1,8 @@
 @()
 <!DOCTYPE html>
 <meta charset="utf-8">
+
+<link rel="stylesheet" href="http://thematicmapping.org/playground/d3/d3.slider/d3.slider.css" />
 <style>
 
 rect {
@@ -27,6 +29,7 @@ stroke: #999;
 </style>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="http://thematicmapping.org/playground/d3/d3.slider/d3.slider.js"></script>
     <script>
 
 var loc = window.location, new_uri;
@@ -153,4 +156,14 @@ function restart() {
 }
 
 </script>
+    <br/>
+    <input type="range" max="20" min="1" value="2" step="1" onchange="showValue(this.value)"/>
+    <span id="range">0</span>
+    <script type="text/javascript">
+function showValue(newValue)
+{
+	document.getElementById("range").innerHTML=newValue;
+}
+</script>
+
 </body>
