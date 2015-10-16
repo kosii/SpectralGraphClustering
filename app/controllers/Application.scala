@@ -89,7 +89,7 @@ class Application extends Controller {
       transformed
     }
 
-    def receive = receive(Set(0), Set(), 4)
+    def receive = receive(Set(0), Set(), 2)
     def receive(nodes: Set[Int], links: Set[(Int, Int)], k: Int): Receive = {
       case msg: JsValue => Json.fromJson[Update](msg) match {
         case JsError(_) =>
