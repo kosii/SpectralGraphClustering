@@ -1,1 +1,3 @@
 This is a little D3.js example to illustrate the Spectral Graph Clustering algorithm explained in the Mining Massive Datasets course at Coursera.
+
+To test type ./activator start, then go to http://localhost:9000 (you might need sbt and scala installed)
