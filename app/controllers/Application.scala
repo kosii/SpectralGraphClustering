@@ -80,7 +80,8 @@ class Application extends Controller {
       val vectorizedResults = colors.toArray.map({case (a, b, c) => Vector(a, b, c)})
       val kmeans = new Kmeans[Vector[Double]](vectorizedResults)
       val (_, centroids) = kmeans.run(k, 10)
-      val (_, memberships) = kmeans.computeClusterMemberships(centroids)
+      val (dispersion, memberships) = kmeans.computeClusterMemberships(centroids)
+      println(s"dispersion for $k: $dispersion")
 //      println(s"memberships: $memberships")
       val replacedWithCentroids = vectorizedResults.zip(memberships).map({case (a, b) => centroids(b)})
 //      println(s"centroids: $centroids")
@@ -111,6 +112,12 @@ class Application extends Controller {
           val colors = colorsToGraph(newNodes, newLinks, k)
 
           out ! Json.toJson(colors)
+
+//          for {
+//            i <- 1 to 20
+//          } colorsToGraph(newNodes, newLinks, i)
+//          println("-------------")
+
 
           context.become(receive(newNodes, newLinks, k))
 
